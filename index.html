@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food App Admin Dashboard</title>
+    <!-- Corrected CDN Links -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.0/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --neumorphic-bg: #e0e5ec;
+            --neumorphic-light: #ffffff;
+            --neumorphic-dark: #a3b1c6;
+            --primary-color: #4f46e5;
+            --secondary-color: #10b981;
+            --accent-color: #f97316;
+            --text-color: #334155;
+        }
+
+        body {
+            background-color: var(--neumorphic-bg);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .neumorphic {
+            border-radius: 16px;
+            background: var(--neumorphic-bg);
+            box-shadow: 8px 8px 16px var(--neumorphic-dark), 
+                        -8px -8px 16px var(--neumorphic-light);
+            transition: all 0.3s ease;
+        }
+
+        .neumorphic:hover {
+            transform: translateY(-2px);
+            box-shadow: 10px 10px 20px var(--neumorphic-dark), 
+                        -10px -10px 20px var(--neumorphic-light);
+        }
+
+        .neumorphic-inset {
+            border-radius: 16px;
+            background: var(--neumorphic-bg);
+            box-shadow: inset 4px 4px 8px var(--neumorphic-dark), 
+                        inset -4px -4px 8px var(--neumorphic-light);
+        }
+
+        .neumorphic-btn {
+            border-radius: 10px;
+            background: var(--neumorphic-bg);
+            box-shadow: 4px 4px 8px var(--neumorphic-dark), 
+                        -4px -4px 8px var(--neumorphic-light);
+            transition: all 0.2s ease;
+        }
+
+        .neumorphic-btn:hover {
+            box-shadow: 6px 6px 10px var(--neumorphic-dark), 
+                        -6px -6px 10px var(--neumorphic-light);
+            transform: translateY(-2px);
+        }
+
+        .neumorphic-btn:active {
+            box-shadow: inset 2px 2px 5px var(--neumorphic-dark), 
+                        inset -2px -2px 5px var(--neumorphic-light);
+            transform: translateY(0);
+        }
+
+        .neumorphic-input {
+            border-radius: 10px;
+            background: var(--neumorphic-bg);
+            box-shadow: inset 2px 2px 5px var(--neumorphic-dark), 
+                        inset -2px -2px 5px var(--neumorphic-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            font-weight: 600;
+            box-shadow: inset 3px 3px 6px var(--neumorphic-dark), 
+                        inset -3px -3px 6px var(--neumorphic-light);
+            background-color: var(--neumorphic-light);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--neumorphic-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--neumorphic-dark);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8a99ad;
+        }
+
+        /* Progress Bar Animation */
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: var(--progress-value); }
+        }
+
+        .progress-bar {
+            animation: progress 1.5s ease-in-out;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .responsive-table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div x-data="dashboard()" class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="neumorphic w-full md:w-64 p-4 m-4 h-auto md:h-[calc(100vh-2rem)] overflow-y-auto flex-shrink-0">
+            <div class="flex items-center justify-center mb-8">
+                <div class="text-2xl font-bold text-primary-600 flex items-center">
+                    <i class="ri-restaurant-2-fill mr-2 text-accent-color text-3xl"></i>
+                    <span class="text-primary-color">FoodBizz</span>
+                </div>
+            </div>
+
+            <nav class="space-y-2">
+                <template x-for="(item, index) in navItems" :key="index">
+                    <a href="#" 
+                       @click.prevent="activeTab = item.id" 
+                       :class="{'active': activeTab === item.id}"
+                       class="nav-link neumorphic-btn flex items-center py-3 px-4 rounded-lg text-sm w-full">
+                        <i :class="item.icon + ' mr-3 text-lg'"></i>
+                        <span x-text="item.name"></span>
+                    </a>
+                </template>
+            </nav>
+
+            <div class="mt-auto pt-8">
+                <div class="neumorphic-inset p-4 rounded-lg">
+                    <div class="text-sm font-medium mb-2">Storage</div>
+                    <div class="w-full h-2 neumorphic-inset rounded-full overflow-hidden">
+                        <div class="progress-bar h-full bg-gradient-to-r from-primary-color to-secondary-color rounded-full" style="--progress-value: 65%; width: 65%"></div>
+                    </div>
+                    <div class="text-xs mt-2 text-right">65% Used</div>
+                </div>
+
+                <div class="neumorphic p-4 rounded-lg mt-4 flex items-center">
+                    <img src="/api/placeholder/40/40" alt="User" class="rounded-full h-10 w-10 mr-3">
+                    <div>
+                        <div class="text-sm font-medium">Admin User</div>
+                        <div class="text-xs opacity-75">admin@fooddash.com</div>
+                    </div>
+                    <button class="ml-auto neumorphic-btn p-2 rounded-lg">
+                        <i class="ri-logout-box-r-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="neumorphic p-4 mb-4 flex flex-col md:flex-row justify-between items-center">
+                <h1 class="text-xl font-bold mb-2 md:mb-0">Dashboard</h1>
+                <div class="flex space-x-2">
+                    <div class="neumorphic-inset p-2 pl-4 rounded-lg flex items-center">
+                        <i class="ri-search-line mr-2"></i>
+                        <input type="text" class="bg-transparent outline-none" placeholder="Search...">
+                    </div>
+                    <button class="neumorphic-btn p-3 rounded-lg">
+                        <i class="ri-notification-3-line"></i>
+                    </button>
+                    <button class="neumorphic-btn p-3 rounded-lg">
+                        <i class="ri-settings-3-line"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="neumorphic p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm opacity-75">Total Orders</div>
+                        <div class="text-secondary-color neumorphic-btn p-2 rounded-full">
+                            <i class="ri-shopping-cart-2-line"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold">8,492</div>
+                    <div class="flex items-center mt-1 text-xs">
+                        <i class="ri-arrow-up-s-line text-green-500 mr-1"></i>
+                        <span class="text-green-500 font-medium">+15.3%</span>
+                        <span class="ml-1 opacity-75">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="neumorphic p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm opacity-75">Total Revenue</div>
+                        <div class="text-primary-color neumorphic-btn p-2 rounded-full">
+                            <i class="ri-money-dollar-circle-line"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold">$74,284</div>
+                    <div class="flex items-center mt-1 text-xs">
+                        <i class="ri-arrow-up-s-line text-green-500 mr-1"></i>
+                        <span class="text-green-500 font-medium">+10.8%</span>
+                        <span class="ml-1 opacity-75">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="neumorphic p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm opacity-75">Active Restaurants</div>
+                        <div class="text-accent-color neumorphic-btn p-2 rounded-full">
+                            <i class="ri-store-2-line"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold">142</div>
+                    <div class="flex items-center mt-1 text-xs">
+                        <i class="ri-arrow-up-s-line text-green-500 mr-1"></i>
+                        <span class="text-green-500 font-medium">+7.2%</span>
+                        <span class="ml-1 opacity-75">vs last month</span>
+                    </div>
+                </div>
+
+                <div class="neumorphic p-4 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="text-sm opacity-75">Active Users</div>
+                        <div class="text-purple-500 neumorphic-btn p-2 rounded-full">
+                            <i class="ri-user-3-line"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold">9,274</div>
+                    <div class="flex items-center mt-1 text-xs">
+                        <i class="ri-arrow-up-s-line text-green-500 mr-1"></i>
+                        <span class="text-green-500 font-medium">+22.5%</span>
+                        <span class="ml-1 opacity-75">vs last month</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                <div class="neumorphic p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-4">Revenue Overview</h2>
+                    <div class="relative h-64">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="neumorphic p-4 rounded-lg">
+                    <h2 class="text-lg font-semibold mb-4">Order Statistics</h2>
+                    <div class="relative h-64">
+                        <canvas id="orderChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="neumorphic p-4 rounded-lg mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Recent Orders</h2>
+                    <button class="neumorphic-btn px-3 py-2 text-sm rounded-lg flex items-center">
+                        <span>View All</span>
+                        <i class="ri-arrow-right-s-line ml-1"></i>
+                    </button>
+                </div>
+
+                <div class="responsive-table overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Order ID</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Customer</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Restaurant</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Amount</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Status</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Date</th>
+                                <th class="py-3 px-2 text-left text-xs sm:text-sm font-medium">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(order, index) in recentOrders" :key="index">
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-3 px-2 text-xs sm:text-sm" x-text="order.id"></td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm">
+                                        <div class="flex items-center">
+                                            <img :src="'/api/placeholder/30/30'" class="rounded-full h-8 w-8 mr-2">
+                                            <span x-text="order.customer"></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm" x-text="order.restaurant"></td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm font-medium" x-text="'$' + order.amount"></td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm">
+                                        <span 
+                                            :class="{
+                                                'bg-green-100 text-green-800': order.status === 'Delivered',
+                                                'bg-blue-100 text-blue-800': order.status === 'Processing',
+                                                'bg-yellow-100 text-yellow-800': order.status === 'Pending',
+                                                'bg-red-100 text-red-800': order.status === 'Cancelled'
+                                            }"
+                                            class="px-2 py-1 rounded-full text-xs font-medium"
+                                            x-text="order.status">
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm" x-text="order.date"></td>
+                                    <td class="py-3 px-2 text-xs sm:text-sm">
+                                        <button class="neumorphic-btn p-2 rounded-lg">
+                                            <i class="ri-more-2-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Restaurants -->
+            <div class="neumorphic p-4 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Top Restaurants</h2>
+                    <button class="neumorphic-btn px-3 py-2 text-sm rounded-lg flex items-center">
+                        <span>View All</span>
+                        <i class="ri-arrow-right-s-line ml-1"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <template x-for="(restaurant, index) in topRestaurants" :key="index">
+                        <div class="neumorphic p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <img :src="'/api/placeholder/50/50'" class="rounded-lg h-12 w-12 mr-3">
+                                <div>
+                                    <div class="text-sm font-semibold" x-text="restaurant.name"></div>
+                                    <div class="text-xs opacity-75" x-text="restaurant.category"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <div>
+                                    <div class="opacity-75">Orders</div>
+                                    <div class="font-medium" x-text="restaurant.orders"></div>
+                                </div>
+                                <div>
+                                    <div class="opacity-75">Rating</div>
+                                    <div class="font-medium flex items-center">
+                                        <span x-text="restaurant.rating"></span>
+                                        <i class="ri-star-fill text-yellow-500 ml-1"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="opacity-75">Revenue</div>
+                                    <div class="font-medium" x-text="'$' + restaurant.revenue"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dashboard() {
+            return {
+                activeTab: 'dashboard',
+                navItems: [
+                    { id: 'dashboard', name: 'Dashboard', icon: 'ri-dashboard-line' },
+                    { id: 'orders', name: 'Orders', icon: 'ri-shopping-cart-2-line' },
+                    { id: 'restaurants', name: 'Restaurants', icon: 'ri-store-2-line' },
+                    { id: 'customers', name: 'Customers', icon: 'ri-user-3-line' },
+                    { id: 'menu', name: 'Menu Items', icon: 'ri-restaurant-line' },
+                    { id: 'delivery', name: 'Delivery', icon: 'ri-bike-line' },
+                    { id: 'reports', name: 'Reports', icon: 'ri-bar-chart-2-line' },
+                    { id: 'settings', name: 'Settings', icon: 'ri-settings-3-line' }
+                ],
+                recentOrders: [
+                    { id: 'ORD-7239', customer: 'Emma Johnson', restaurant: 'Burger Palace', amount: 38.50, status: 'Delivered', date: 'Mar 22, 2025' },
+                    { id: 'ORD-7238', customer: 'Liam Wilson', restaurant: 'Pizza Haven', amount: 45.75, status: 'Processing', date: 'Mar 22, 2025' },
+                    { id: 'ORD-7237', customer: 'Olivia Davis', restaurant: 'Sushi World', amount: 62.20, status: 'Pending', date: 'Mar 22, 2025' },
+                    { id: 'ORD-7236', customer: 'Noah Smith', restaurant: 'Taco Express', amount: 28.99, status: 'Delivered', date: 'Mar 21, 2025' },
+                    { id: 'ORD-7235', customer: 'Ava Johnson', restaurant: 'Pasta Place', amount: 52.40, status: 'Cancelled', date: 'Mar 21, 2025' }
+                ],
+                topRestaurants: [
+                    { name: 'Burger Palace', category: 'Fast Food', orders: 1324, rating: 4.8, revenue: '28,450' },
+                    { name: 'Pizza Haven', category: 'Italian', orders: 1142, rating: 4.7, revenue: '25,680' },
+                    { name: 'Sushi World', category: 'Japanese', orders: 987, rating: 4.9, revenue: '22,300' },
+                    { name: 'Taco Express', category: 'Mexican', orders: 865, rating: 4.6, revenue: '19,750' }
+                ],
+                init() {
+                    this.initRevenueChart();
+                    this.initOrderChart();
+                },
+                initRevenueChart() {
+                    const ctx = document.getElementById('revenueChart').getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+                    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+                    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                            datasets: [{
+                                label: 'Revenue',
+                                data: [15000, 21000, 18000, 24000, 23000, 28000, 32000, 35000, 37000, 34000, 40000, 42000],
+                                borderColor: '#4f46e5',
+                                backgroundColor: gradient,
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: '#4f46e5',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6,
+                                pointHoverRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#ffffff',
+                                    titleColor: '#334155',
+                                    bodyColor: '#334155',
+                                    borderColor: '#e2e8f0',
+                                    borderWidth: 1,
+                                    padding: 12,
+                                    displayColors: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `$ ${context.parsed.y.toLocaleString()}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { borderDash: [4, 4], color: '#e2e8f0' },
+                                    ticks: {
+                                        color: '#94a3b8',
+                                        callback: function(value) { return '$' + value.toLocaleString(); }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                initOrderChart() {
+                    const ctx = document.getElementById('orderChart').getContext('2d');
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                            datasets: [{
+                                label: 'Orders',
+                                data: [420, 560, 480, 620, 650, 700, 780, 820, 880, 840, 900, 950],
+                                backgroundColor: '#10b981',
+                                borderRadius: 8,
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#ffffff',
+                                    titleColor: '#334155',
+                                    bodyColor: '#334155',
+                                    borderColor: '#e2e8f0',
+                                    borderWidth: 1,
+                                    padding: 12,
+                                    displayColors: false
+                                }
+                            },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { borderDash: [4, 4], color: '#e2e8f0' },
+                                    ticks: { color: '#94a3b8' }
+                                }
+                            }
+                        }
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>
